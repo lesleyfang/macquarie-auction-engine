@@ -4,6 +4,32 @@ Scope: a **mid-level scale** in-memory call auction. The goal is a correct, low-
 
 Error handling **is** implemented: domain failures do not kill the worker loop.
 
+## Table of Contents
+
+- [Architecture](#architecture)
+- [What is implemented](#what-is-implemented)
+  - [Messaging](#messaging)
+  - [Order book](#order-book)
+  - [Matching](#matching)
+  - [Hash map](#hash-map)
+  - [Error handling](#error-handling)
+  - [Tests](#tests)
+- [Tie-breaking](#tie-breaking)
+  - [Maximum Volume Matching (primary rule)](#maximum-volume-matching-primary-rule)
+  - [How our extra steps relate to that rule](#how-our-extra-steps-relate-to-that-rule)
+  - [1. Build the optimal price range](#1-build-the-optimal-price-range)
+  - [2. Surplus at the two bounds](#2-surplus-at-the-two-bounds)
+  - [3. Rules we apply](#3-rules-we-apply)
+  - [4. Worked examples (AuctionMatcherTest)](#4-worked-examples-auctionmatchertest)
+- [Known gaps (deferred on purpose)](#known-gaps-deferred-on-purpose)
+- [Scale target](#scale-target)
+- [Memory usage](#memory-usage)
+  - [How it is laid out](#how-it-is-laid-out)
+  - [Accounted size at 1 million orders](#accounted-size-at-1-million-orders)
+  - [Measured heap (this machine)](#measured-heap-this-machine)
+  - [How to collect the numbers](#how-to-collect-the-numbers)
+- [Measured latency (1 million orders)](#measured-latency-1-million-orders)
+
 ## Architecture
 
 The engine is **in-process only**. Many producer threads enqueue commands; **one worker** (driven by the caller — no engine-owned thread) mutates the book and runs the call auction.
