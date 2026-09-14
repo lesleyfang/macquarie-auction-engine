@@ -30,7 +30,9 @@ class OrderBookTest {
     @Test
     void constructorRejectsInvalidTickSizeAndCapacity() {
         assertThrows(IllegalArgumentException.class, () -> new OrderBook(0.0, 16));
+        assertThrows(IllegalArgumentException.class, () -> new OrderBook(-0.01, 16));
         assertThrows(IllegalArgumentException.class, () -> new OrderBook(Double.NaN, 16));
+        assertThrows(IllegalArgumentException.class, () -> new OrderBook(Double.POSITIVE_INFINITY, 16));
         assertThrows(IllegalArgumentException.class, () -> new OrderBook(TICK, 0));
     }
 
