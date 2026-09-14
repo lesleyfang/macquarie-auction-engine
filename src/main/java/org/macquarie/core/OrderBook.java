@@ -160,6 +160,9 @@ public class OrderBook {
         if (quantity <= 0) {
             throw new IllegalArgumentException("Quantity must be > 0");
         }
+        if (quantity > QTY_MASK) {
+            throw new IllegalArgumentException("Quantity exceeds max supported value: " + QTY_MASK);
+        }
     }
 
     private static long packQuantityAndSide(long quantity, boolean isBuy) {
