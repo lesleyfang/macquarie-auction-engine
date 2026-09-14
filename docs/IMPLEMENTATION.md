@@ -101,9 +101,12 @@ Commands: `ADD`, `AMEND`, `CANCEL`, `END_AUCTION`, `SHUTDOWN`.
 
 ### Order book
 - Add / amend / cancel
+- Constructor rejects non-positive tick size or capacity
 - Duplicate-id rejected
 - Amend of unknown id rejected
 - Cancel of unknown id is a no-op
+- Non-positive / non-finite prices rejected on add/amend
+- Non-positive quantities rejected on add/amend
 - Amend/cancel with the wrong `isBuy` rejected; book unchanged
 - Lazy segment growth for higher prices
 - Prices stored as cents via `BigDecimal` (HALF_UP)

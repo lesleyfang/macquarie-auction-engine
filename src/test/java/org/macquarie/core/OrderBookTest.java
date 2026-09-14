@@ -28,6 +28,13 @@ class OrderBookTest {
     }
 
     @Test
+    void constructorRejectsInvalidTickSizeAndCapacity() {
+        assertThrows(IllegalArgumentException.class, () -> new OrderBook(0.0, 16));
+        assertThrows(IllegalArgumentException.class, () -> new OrderBook(Double.NaN, 16));
+        assertThrows(IllegalArgumentException.class, () -> new OrderBook(TICK, 0));
+    }
+
+    @Test
     void addOrderRejectsDuplicateIds() {
         OrderBook book = new OrderBook(TICK, 16);
         book.addOrder(1L, 10.00, 10, true);
@@ -37,6 +44,24 @@ class OrderBookTest {
         );
         assertEquals("Order ID already exists: 1", ex.getMessage());
         assertEquals(10L, book.getTotalBuyVolume());
+    }
+
+    @Test
+    void addOrderRejectsInvalidPriceAndQuantity() {
+        OrderBook book = new OrderBook(TICK, 16);
+
+        IllegalArgumentException badPrice = assertThrows(
+                IllegalArgumentException.class,
+                () -> book.addOrder(1L, -10.00, 10, true)
+        );
+        assertEquals("Price must be a finite positive value", badPrice.getMessage());
+
+        IllegalArgumentException badQuantity = assertThrows(
+                IllegalArgumentException.class,
+                () -> book.addOrder(2L, 10.00, 0, true)
+        );
+        assertEquals("Quantity must be > 0", badQuantity.getMessage());
+        assertEquals(0L, book.getTotalBuyVolume());
     }
 
     @Test
@@ -72,6 +97,28 @@ class OrderBookTest {
                 () -> book.amendOrder(99L, 10.00, 10, true)
         );
         assertEquals("Order ID not found for amendment: 99", ex.getMessage());
+    }
+
+    @Test
+    void amendOrderRejectsInvalidPriceAndQuantityAndLeavesBookUnchanged() {
+        OrderBook book = new OrderBook(TICK, 16);
+        book.addOrder(1L, 10.05, 100, true);
+
+        IllegalArgumentException badPrice = assertThrows(
+                IllegalArgumentException.class,
+                () -> book.amendOrder(1L, 0.0, 50, true)
+        );
+        assertEquals("Price must be a finite positive value", badPrice.getMessage());
+
+        IllegalArgumentException badQuantity = assertThrows(
+                IllegalArgumentException.class,
+                () -> book.amendOrder(1L, 10.06, -1, true)
+        );
+        assertEquals("Quantity must be > 0", badQuantity.getMessage());
+
+        int tick = tickIndex(10.05);
+        assertEquals(100L, book.getBuyVolumeAt(tick));
+        assertEquals(100L, book.getTotalBuyVolume());
     }
 
     @Test

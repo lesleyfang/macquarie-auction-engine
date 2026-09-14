@@ -27,6 +27,12 @@ public class OrderBook {
     private final PrimitiveOpenAddressingMap orderMap;
 
     public OrderBook(double tickSize, int maxOrders) {
+        if (!Double.isFinite(tickSize) || tickSize <= 0.0) {
+            throw new IllegalArgumentException("Tick size must be a finite positive value");
+        }
+        if (maxOrders <= 0) {
+            throw new IllegalArgumentException("maxOrders must be > 0");
+        }
         this.tickSizeCents = parsePriceToCents(tickSize);
         this.orderMap = new PrimitiveOpenAddressingMap(maxOrders);
     }
@@ -66,6 +72,7 @@ public class OrderBook {
     }
 
     public void addOrder(long orderId, double price, long quantity, boolean isBuy) {
+        validateOrderInputs(price, quantity);
         long priceCents = parsePriceToCents(price);
         int index = priceToTickIndex(priceCents);
         ensureCapacity(index);
@@ -99,6 +106,7 @@ public class OrderBook {
             throw new IllegalArgumentException("Order side mismatch for amendment: " + orderId);
         }
 
+        validateOrderInputs(newPrice, newQuantity);
         long newPriceCents = parsePriceToCents(newPrice);
         int newTickIndex = priceToTickIndex(newPriceCents);
         ensureCapacity(newTickIndex);
@@ -143,6 +151,15 @@ public class OrderBook {
         }
 
         orderMap.remove(orderId);
+    }
+
+    private static void validateOrderInputs(double price, long quantity) {
+        if (!Double.isFinite(price) || price <= 0.0) {
+            throw new IllegalArgumentException("Price must be a finite positive value");
+        }
+        if (quantity <= 0) {
+            throw new IllegalArgumentException("Quantity must be > 0");
+        }
     }
 
     private static long packQuantityAndSide(long quantity, boolean isBuy) {
