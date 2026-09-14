@@ -28,6 +28,15 @@ class OrderBookTest {
     }
 
     @Test
+    void constructorRejectsInvalidTickSizeAndCapacity() {
+        assertThrows(IllegalArgumentException.class, () -> new OrderBook(0.0, 16));
+        assertThrows(IllegalArgumentException.class, () -> new OrderBook(-0.01, 16));
+        assertThrows(IllegalArgumentException.class, () -> new OrderBook(Double.NaN, 16));
+        assertThrows(IllegalArgumentException.class, () -> new OrderBook(Double.POSITIVE_INFINITY, 16));
+        assertThrows(IllegalArgumentException.class, () -> new OrderBook(TICK, 0));
+    }
+
+    @Test
     void addOrderRejectsDuplicateIds() {
         OrderBook book = new OrderBook(TICK, 16);
         book.addOrder(1L, 10.00, 10, true);
@@ -37,6 +46,42 @@ class OrderBookTest {
         );
         assertEquals("Order ID already exists: 1", ex.getMessage());
         assertEquals(10L, book.getTotalBuyVolume());
+    }
+
+    @Test
+    void addOrderRejectsInvalidPriceAndQuantity() {
+        OrderBook book = new OrderBook(TICK, 16);
+
+        IllegalArgumentException badPrice = assertThrows(
+                IllegalArgumentException.class,
+                () -> book.addOrder(1L, -10.00, 10, true)
+        );
+        assertEquals("Price must be a finite positive value", badPrice.getMessage());
+
+        IllegalArgumentException nanPrice = assertThrows(
+                IllegalArgumentException.class,
+                () -> book.addOrder(2L, Double.NaN, 10, true)
+        );
+        assertEquals("Price must be a finite positive value", nanPrice.getMessage());
+
+        IllegalArgumentException infPrice = assertThrows(
+                IllegalArgumentException.class,
+                () -> book.addOrder(3L, Double.POSITIVE_INFINITY, 10, true)
+        );
+        assertEquals("Price must be a finite positive value", infPrice.getMessage());
+
+        IllegalArgumentException badQuantity = assertThrows(
+                IllegalArgumentException.class,
+                () -> book.addOrder(4L, 10.00, 0, true)
+        );
+        assertEquals("Quantity must be > 0", badQuantity.getMessage());
+
+        IllegalArgumentException oversizedQuantity = assertThrows(
+                IllegalArgumentException.class,
+                () -> book.addOrder(5L, 10.00, (1L << 31), true)
+        );
+        assertEquals("Quantity exceeds max supported value: 2147483647", oversizedQuantity.getMessage());
+        assertEquals(0L, book.getTotalBuyVolume());
     }
 
     @Test
@@ -72,6 +117,46 @@ class OrderBookTest {
                 () -> book.amendOrder(99L, 10.00, 10, true)
         );
         assertEquals("Order ID not found for amendment: 99", ex.getMessage());
+    }
+
+    @Test
+    void amendOrderRejectsInvalidPriceAndQuantityAndLeavesBookUnchanged() {
+        OrderBook book = new OrderBook(TICK, 16);
+        book.addOrder(1L, 10.05, 100, true);
+
+        IllegalArgumentException badPrice = assertThrows(
+                IllegalArgumentException.class,
+                () -> book.amendOrder(1L, 0.0, 50, true)
+        );
+        assertEquals("Price must be a finite positive value", badPrice.getMessage());
+
+        IllegalArgumentException nanPrice = assertThrows(
+                IllegalArgumentException.class,
+                () -> book.amendOrder(1L, Double.NaN, 50, true)
+        );
+        assertEquals("Price must be a finite positive value", nanPrice.getMessage());
+
+        IllegalArgumentException infPrice = assertThrows(
+                IllegalArgumentException.class,
+                () -> book.amendOrder(1L, Double.POSITIVE_INFINITY, 50, true)
+        );
+        assertEquals("Price must be a finite positive value", infPrice.getMessage());
+
+        IllegalArgumentException badQuantity = assertThrows(
+                IllegalArgumentException.class,
+                () -> book.amendOrder(1L, 10.06, -1, true)
+        );
+        assertEquals("Quantity must be > 0", badQuantity.getMessage());
+
+        IllegalArgumentException oversizedQuantity = assertThrows(
+                IllegalArgumentException.class,
+                () -> book.amendOrder(1L, 10.06, (1L << 31), true)
+        );
+        assertEquals("Quantity exceeds max supported value: 2147483647", oversizedQuantity.getMessage());
+
+        int tick = tickIndex(10.05);
+        assertEquals(100L, book.getBuyVolumeAt(tick));
+        assertEquals(100L, book.getTotalBuyVolume());
     }
 
     @Test

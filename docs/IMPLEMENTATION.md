@@ -101,9 +101,13 @@ Commands: `ADD`, `AMEND`, `CANCEL`, `END_AUCTION`, `SHUTDOWN`.
 
 ### Order book
 - Add / amend / cancel
+- Constructor rejects non-positive tick size or capacity
 - Duplicate-id rejected
 - Amend of unknown id rejected
 - Cancel of unknown id is a no-op
+- Non-positive / non-finite prices rejected on add/amend
+- Non-positive quantities rejected on add/amend
+- Quantities above `2,147,483,647` rejected on add/amend
 - Amend/cancel with the wrong `isBuy` rejected; book unchanged
 - Lazy segment growth for higher prices
 - Prices stored as cents via `BigDecimal` (HALF_UP)
@@ -246,7 +250,7 @@ Mid-scale first. These are known, not accidental.
 
 **Order book correctness corners**
 - `minActiveTick` / `maxActiveTick` never shrink after cancel (matcher may scan empty ticks)
-- Quantity packed in 31 bits (side occupies 1 bit of the map payload)
+- Quantity is limited to 31 bits (side occupies 1 bit of the map payload)
 - Map does not resize; `maxOrders` is a hard cap
 - No re-entry after `SHUTDOWN` except draining already-queued commands
 
